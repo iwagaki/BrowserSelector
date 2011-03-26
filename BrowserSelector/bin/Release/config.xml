@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE configuration [
+  <!ELEMENT configuration (applications,default,patterns)>
+  <!ELEMENT applications (application+)>
+  <!ELEMENT application (name,path)>
+  <!ELEMENT name (#PCDATA)>
+  <!ELEMENT path (#PCDATA)>
+  <!ELEMENT patterns (pattern*)>
+  <!ELEMENT pattern (regex, exec)>
+  <!ELEMENT regex (#PCDATA)>
+  <!ELEMENT exec (#PCDATA)>
+  <!ELEMENT default (#PCDATA)>
+]>
+
+<configuration>
+  <applications>
+    <application>
+      <name>Internet Explorer</name>
+      <path>C:\Program Files\Internet Explorer\IEXPLORE.EXE</path>
+    </application>
+    <application>
+      <name>Google Chrome</name>
+      <path>C:\Documents and Settings\admin\Local Settings\Application Data\Google\Chrome\Application\chrome.exe</path>
+    </application>
+  </applications>
+  <default>Internet Explorer</default>
+  <patterns>
+    <pattern>
+      <regex>^https?://code.google.com</regex>
+      <exec>Google Chrome</exec>
+    </pattern>
+    <pattern>
+      <regex>^https?://github.com</regex>
+      <exec>Google Chrome</exec>
+    </pattern>
+  </patterns>
+</configuration>

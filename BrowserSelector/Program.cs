@@ -21,14 +21,12 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Windows.Forms;
 
 using System.Diagnostics;
-using System.Threading;
 using System.Text.RegularExpressions;
-using System.Configuration;
+using System.Xml;
+using System.Xml.Schema;
 
 namespace BrowserSelector
 {
@@ -37,57 +35,78 @@ namespace BrowserSelector
         [STAThread]
         static void Main(string[] args)
         {
-            string argument = @"http://www.google.co.jp";
+            string xmlPath = "config.xml";
 
+            XmlDocument configXml = new XmlDocument();
+
+            XmlReaderSettings settings = new XmlReaderSettings();
+            settings.DtdProcessing = DtdProcessing.Parse;
+            settings.ValidationType = ValidationType.DTD;
+            
+            XmlReader reader = XmlReader.Create(xmlPath, settings);
+
+            string argument = @"http://www.google.co.jp";
             if (args.Length > 0)
                 argument = args[0];
 
-            Process externalProcess = new Process();
-
             try
             {
-                String filename = ConfigurationManager.AppSettings[isDefaultBrowsing(argument) ? "default" : "another"];
-                if (filename != null)
-                {
-                    externalProcess.StartInfo.FileName = filename;
-                    externalProcess.StartInfo.Arguments = argument;
-                    externalProcess.Start();
-                }
-                else
-                    throw new FormatException("Entry for \"deault\" or \"another\" should exist in .config");
+                configXml.Load(reader);
+
+                Process externalProcess = new Process();
+
+                string path = getApplicationPath(configXml, getBrowserByUrl(configXml, argument));
+
+                externalProcess.StartInfo.FileName = path;
+                externalProcess.StartInfo.Arguments = argument;
+                externalProcess.Start();
             }
-            catch (FormatException e)
+            catch (XmlSchemaValidationException e)
             {
-                MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(e.Message, "Illigal setting in config.xml", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            catch (ArgumentException)
+            catch (Exception e)
             {
-                MessageBox.Show("Invalid regular expression in .config" , "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(e.Message, "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        static bool isDefaultBrowsing(string argument)
+        static string getDefualtBrowser(XmlDocument configXml)
         {
-            foreach (string key in ConfigurationManager.AppSettings.AllKeys)
+            return configXml.SelectSingleNode("/configuration/default").InnerText;
+        }
+
+        static string getBrowserByUrl(XmlDocument configXml, string argument)
+        {
+            XmlNodeList nodes = configXml.SelectNodes("/configuration/patterns/pattern");
+
+            foreach (XmlNode node in nodes)
             {
-                if (Regex.IsMatch(key, "^default$") || Regex.IsMatch(key, "^another$"))
-                    continue;
+                string regex = node.SelectSingleNode("regex").InnerText;
+                string exec = node.SelectSingleNode("exec").InnerText;
 
-                bool isDefault = true;
-                
-                if (Regex.IsMatch(key, "^default"))
-                    isDefault = true;
-                else if (Regex.IsMatch(key, "^another"))
-                    isDefault = false;
-                else
-                    throw new FormatException(@"Invalid element was found in .config");
+                if (Regex.IsMatch(argument, regex))
+                    return exec;
+            }
 
-                string pattern = ConfigurationManager.AppSettings[key];
-                if (Regex.IsMatch(argument, pattern))
-                    return isDefault;
-                }
+            // No pattern matches
+            return getDefualtBrowser(configXml);
+        }
 
-            return true;
+        static string getApplicationPath(XmlDocument configXml, string applicationName)
+        {
+            XmlNodeList nodes = configXml.SelectNodes("/configuration/applications/application");
+
+            foreach (XmlNode node in nodes)
+            {
+                string name = node.SelectSingleNode("name").InnerText;
+                string path = node.SelectSingleNode("path").InnerText;
+
+                if (name == applicationName)
+                    return path;
+            }
+
+            throw new FormatException(@"Cannot find an application entry for " + applicationName);
         }
     }
 }
