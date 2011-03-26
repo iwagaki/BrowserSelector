@@ -30,7 +30,7 @@ using System.Threading;
 using System.Text.RegularExpressions;
 using System.Configuration;
 
-namespace BrowserSwitcher
+namespace BrowserSelector
 {
     static class Program
     {
