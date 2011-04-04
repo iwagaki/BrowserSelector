@@ -27,6 +27,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Schema;
+using System.Threading;
 
 namespace BrowserSelector
 {
@@ -35,22 +36,24 @@ namespace BrowserSelector
         [STAThread]
         static void Main(string[] args)
         {
-            string xmlPath = "config.xml";
-
-            XmlDocument configXml = new XmlDocument();
-
-            XmlReaderSettings settings = new XmlReaderSettings();
-            settings.DtdProcessing = DtdProcessing.Parse;
-            settings.ValidationType = ValidationType.DTD;
-            
-            XmlReader reader = XmlReader.Create(xmlPath, settings);
-
-            string argument = @"http://www.google.co.jp";
-            if (args.Length > 0)
-                argument = args[0];
+            Thread.GetDomain().UnhandledException += new UnhandledExceptionEventHandler(UnhandledExceptionHandler);
 
             try
             {
+                string xmlPath = Application.StartupPath + @"\config.xml";
+                Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
+                XmlDocument configXml = new XmlDocument();
+
+                XmlReaderSettings settings = new XmlReaderSettings();
+                settings.DtdProcessing = DtdProcessing.Parse;
+                settings.ValidationType = ValidationType.DTD;
+
+                XmlReader reader = XmlReader.Create(xmlPath, settings);
+
+                string argument = @"http://www.google.co.jp";
+                if (args.Length > 0)
+                    argument = args[0];
+
                 configXml.Load(reader);
 
                 Process externalProcess = new Process();
@@ -69,6 +72,12 @@ namespace BrowserSelector
             {
                 MessageBox.Show(e.Message, "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs exceptionEvent)
+        {
+            Exception e = exceptionEvent.ExceptionObject as Exception;
+            MessageBox.Show(e.Message, "Unhandled Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         static string getDefualtBrowser(XmlDocument configXml)
