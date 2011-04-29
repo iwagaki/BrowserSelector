@@ -26,11 +26,11 @@
   <default>Internet Explorer</default>
   <patterns>
     <pattern>
-      <regex>^https?://code.google.com</regex>
+      <regex>^https?://code\.google\.com</regex>
       <exec>Google Chrome</exec>
     </pattern>
     <pattern>
-      <regex>^https?://github.com</regex>
+      <regex>^https?://github\.com</regex>
       <exec>Google Chrome</exec>
     </pattern>
   </patterns>
